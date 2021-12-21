@@ -18,7 +18,7 @@ load_api_key("api_key.txt")
 tables <- list()
 
 files <- dir("data") %>% 
-  str_subset(".*json")
+  str_subset("^uc.*json")
 
 for (file in files) {
   varname <- str_extract(file, ".*(?=\\.json)")
@@ -27,6 +27,7 @@ for (file in files) {
   }
   
 }
+
 
 # graph to check all
 tables$uc_hh_jcp$dfs[[1]] %>% 
@@ -50,6 +51,17 @@ uc_hh_jcp_ts <- tables$uc_hh_jcp$dfs[[1]] %>%
   filter(jcp != "Total") 
 
 
+# Jobseekers claimants as baseline?
+js_by_la <- fetch_table(read_file(file.path("data", "js_pp_la.json")))
+
+js_by_la$dfs[[1]] %>% 
+  select(`Local authority` = 1, Quarter, n_p_js = 3) %>% 
+  mutate(Month = dmy(paste0("1-", Quarter)), .keep = "unused") %>% 
+  nest(-`Local authority`) %>% 
+  sample_n(10) %>% 
+  unnest(data) %>% 
+  ggplot(aes(Month, -n_p_js, colour = `Local authority`)) +
+  geom_line()
 
 # checking for present rollout dates --------------------------------------
 # Read table of dates from website
@@ -319,8 +331,8 @@ uc_hh_by_la_1pm <- la_rollout_periods_1pm %>%
       fill = "lightblue",
       alpha = 0.5
     ) +
-    coord_cartesian(ylim = c(0, max(uc_hh_jcp_starts$n_h))) +
     geom_line(data = uc_hh_by_la_1pm, aes(Month, n_h, text = tooltip, group  = jcp)) +
+    coord_cartesian(ylim = c(0, max(uc_hh_jcp_starts$n_h))) +
     scale_y_continuous("Number of households on universal credit",
                        labels = scales::number_format(big.mark = ","),
                        expand = expansion(mult = c(0, NA)))
@@ -345,3 +357,76 @@ rollout_byla_1pm <- last_plot()
 
 htmlwidgets::saveWidget(rollout_byla_1pm, file = "hosting/public/by_la_1pm/index.html")
 
+
+
+# People on UC by employment status ---------------------------------------
+
+uc_pp_jcp_empl_ts <- tables$uc_pp_jcp_empl$dfs[[1]] %>% 
+  select(jcp = `Jobcentre Plus`, Month, n_p = `People on Universal Credit`, emp = `Employment indicator`) %>% 
+  mutate(Month = dmy(paste(1, Month)),
+         jcp = str_to_title(str_replace_all(jcp, "-", " "))) %>% 
+  filter(jcp != "Total") %>% 
+  right_join(jcp_rollout_dates, by = c("jcp"))
+
+{
+  uc_pp_jcp_empl_ts %>%
+    group_by(`Local authority`, Month, emp) %>%
+    summarise(n_p = sum(n_p), .groups = "drop_last") %>%
+    # filter(`Local authority` == "Aberdeen City Council"| `Local authority` == "Allerdale Borough Council") %>%
+    arrange(desc(Month)) %>% 
+    filter(emp != "Total") %>%
+    mutate(
+      tooltip = paste0(
+        "Local authority: ", `Local authority`,
+        "\nMonth: ", Month,
+        "\nNumber of individuals ", str_to_lower(emp), ": ", n_p
+      ),
+      n_p = if_else(emp == "Not in employment", sum(n_p), n_p)
+    ) %>%
+    ungroup() %>% 
+    ggplot(
+      aes(frame = as_factor(`Local authority`))
+      ) +
+    geom_rect(
+      data = la_rollout_periods, #%>% filter(`Local authority` == "Aberdeen City Council"| `Local authority` == "Allerdale Borough Council"),
+      aes(
+        xmin = start,
+        xmax = end,
+        ymin  = 0,
+        ymax = 150000,
+        text = paste0(`Local authority`, " rollout period\n(", start, "-", end, ")")
+      ),
+      colour = "black",
+      fill = "lightblue",
+      alpha = 0.5
+    ) +
+    geom_area(aes(
+      Month,
+      n_p,
+      fill = fct_rev(emp),
+      group = interaction(`Local authority`, emp),
+      text = tooltip
+    ),
+    position = "identity") +
+    scale_fill_sphsu(palette = "hot", name = "Employment status") +
+    coord_cartesian(ylim = c(0, max(uc_pp_jcp_empl_ts$n_p))) +
+    scale_y_continuous(
+      "Number of individuals on universal credit",
+      labels = scales::number_format(big.mark = ","),
+      expand = expansion(mult = c(0, NA))
+    )
+  } %>%
+  ggplotly(tooltip = "text") %>%
+  animation_opts(redraw = TRUE, transition = 0) %>%
+  animation_slider(
+    currentvalue = list(
+      prefix = "Local authority: "
+    )
+  ) %>%
+  config(displayModeBar = FALSE) %>%
+  layout(
+    xaxis = list(fixedrange = TRUE),
+    xaxis2 = list(fixedrange = TRUE),
+    yaxis = list(fixedrange = TRUE),
+    yaxis2 = list(fixedrange = TRUE)
+  )
