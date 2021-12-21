@@ -381,19 +381,22 @@ uc_pp_jcp_empl_ts <- tables$uc_pp_jcp_empl$dfs[[1]] %>%
         "\nMonth: ", Month,
         "\nNumber of individuals ", str_to_lower(emp), ": ", n_p
       ),
-      n_p = if_else(emp == "Not in employment", sum(n_p), n_p)
+      n_p = if_else(emp == "Not in employment", sum(n_p), n_p),
     ) %>%
+    group_by(`Local authority`) %>% 
+    mutate(p_p = n_p/max(n_p)) %>% 
     ungroup() %>% 
     ggplot(
       aes(frame = as_factor(`Local authority`))
       ) +
     geom_rect(
-      data = la_rollout_periods, #%>% filter(`Local authority` == "Aberdeen City Council"| `Local authority` == "Allerdale Borough Council"),
+      data = la_rollout_periods, # %>%
+        # filter(`Local authority` == "Aberdeen City Council"| `Local authority` == "Allerdale Borough Council"),
       aes(
         xmin = start,
         xmax = end,
         ymin  = 0,
-        ymax = 150000,
+        ymax = 1,
         text = paste0(`Local authority`, " rollout period\n(", start, "-", end, ")")
       ),
       colour = "black",
@@ -402,17 +405,17 @@ uc_pp_jcp_empl_ts <- tables$uc_pp_jcp_empl$dfs[[1]] %>%
     ) +
     geom_area(aes(
       Month,
-      n_p,
+      p_p,
       fill = fct_rev(emp),
       group = interaction(`Local authority`, emp),
       text = tooltip
     ),
     position = "identity") +
     scale_fill_sphsu(palette = "hot", name = "Employment status") +
-    coord_cartesian(ylim = c(0, max(uc_pp_jcp_empl_ts$n_p))) +
+    coord_cartesian(ylim = c(0, NA)) +
     scale_y_continuous(
-      "Number of individuals on universal credit",
-      labels = scales::number_format(big.mark = ","),
+      "Proportion of max individuals on universal credit",
+      labels = scales::percent,
       expand = expansion(mult = c(0, NA))
     )
   } %>%
@@ -428,5 +431,11 @@ uc_pp_jcp_empl_ts <- tables$uc_pp_jcp_empl$dfs[[1]] %>%
     xaxis = list(fixedrange = TRUE),
     xaxis2 = list(fixedrange = TRUE),
     yaxis = list(fixedrange = TRUE),
-    yaxis2 = list(fixedrange = TRUE)
+    yaxis2 = list(fixedrange = TRUE),
+    legend = list(x = 0.1, y = 0.9)
   )
+
+
+rollout_by_la_emp <- last_plot()
+
+htmlwidgets::saveWidget(rollout_by_la_emp, file = "hosting/public/by_la_emp/index.html")
