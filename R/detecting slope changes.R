@@ -37,9 +37,14 @@ uc_households_tidy %>%
 
 uc_households_tidy %>% 
   filter(local_authority == "South Lanarkshire")  %>% 
-  ggplot(aes(m_y, rel_n)) +
+  ggplot(aes(m_y, n_households)) +
+  geom_vline(xintercept = ymd("2015-10-01"), colour = "red", linetype = "dashed") +
+  geom_vline(xintercept = ymd("2017-10-01"), colour = "red", linetype = "dashed") +
   geom_vline(xintercept = ymd("2020-03-01"), colour = "red", linetype = "dashed") +
-  geom_line(size = 1)
+  geom_line(size = 1) +
+  xlab("Month") +
+  scale_y_continuous("Number of households on Universal Credit", labels = scales::number_format(big.mark = ",")) +
+  ggtitle("Universal Credit rollout - South Lanarkshire")
 
 
 # testing fitting segmented regression model ------------------------------
