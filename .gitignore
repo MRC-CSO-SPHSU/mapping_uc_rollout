@@ -3,4 +3,6 @@
 .RData
 .Ruserdata
 api_key.txt
-/data
+/data/*
+!/data/*.json
+/hosting
