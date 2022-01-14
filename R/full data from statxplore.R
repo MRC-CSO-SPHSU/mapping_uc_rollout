@@ -23,11 +23,13 @@ files <- dir("data") %>%
 for (file in files) {
   varname <- str_extract(file, ".*(?=\\.json)")
   if (!(varname %in% names(tables))) {
+    cat(glue::glue("{varname} extracting..."), sep = "\n")
     tables[[varname]] <- fetch_table(read_file(file.path("data", file)))
+    cat(glue::glue("{varname} completed, pausing to reset connection..."), sep = "\n")
+    Sys.sleep(2)
   }
   
 }
-
 
 # graph to check all
 tables$uc_hh_jcp$dfs[[1]] %>% 
@@ -439,3 +441,164 @@ uc_pp_jcp_empl_ts <- tables$uc_pp_jcp_empl$dfs[[1]] %>%
 rollout_by_la_emp <- last_plot()
 
 htmlwidgets::saveWidget(rollout_by_la_emp, file = "hosting/public/by_la_emp/index.html")
+
+# by family type ----------------------------------------------------------
+
+uc_hh_jcp_family_ts <- tables$uc_hh_jcp_family$dfs[[1]] %>% 
+  select(jcp = `Jobcentre Plus`, Month, n_hh = `Households on Universal Credit`, fam = `Family Type`) %>% 
+  mutate(Month = dmy(paste(1, Month)),
+         jcp = str_to_title(str_replace_all(jcp, "-", " "))) %>% 
+  filter(jcp != "Total") %>% 
+  right_join(jcp_rollout_dates, by = c("jcp"))
+
+
+# arrange by LA name at some point!
+{
+  uc_hh_jcp_family_ts %>% 
+    # filter(str_detect(`Local authority`, "Aberdeen")) %>%
+    group_by(`Local authority`, Month, fam) %>%
+    summarise(n_hh = sum(n_hh), .groups = "drop_last") %>%
+      mutate(fam = factor(fam, levels = c("Single, no children", "Single, with children", "Couple, no children", 
+                                          "Couple, with children", "Unknown or missing family type", "Total"))) %>% 
+    arrange(`Local authority`, desc(Month), desc(fam)) %>% 
+    filter(fam != "Total") %>%
+    mutate(
+      # `Local authority` = fct_inorder(`Local authority`),
+      tooltip = paste0(
+        "Local authority: ", `Local authority`,
+        "\nMonth: ", Month,
+        "\nNumber of households, ", str_to_lower(fam), ": ", n_hh
+      ),
+      n_hh = cumsum(n_hh),
+    ) %>%
+    group_by(`Local authority`) %>% 
+    mutate(p_p = n_hh/max(n_hh),
+           fam = fct_reorder(fam, p_p, max, .desc = FALSE)) %>% 
+    ungroup() %>% 
+    # filter(`Local authority` == "Aberdeen City Council") %>% arrange(desc(Month)) %>% 
+    ggplot(
+      aes(frame = `Local authority`)
+      ) +
+    geom_rect(
+      data = la_rollout_periods, # %>%
+        # filter(`Local authority` == "Aberdeen City Council"| `Local authority` == "Allerdale Borough Council"),
+      aes(
+        xmin = start,
+        xmax = end,
+        ymin  = 0,
+        ymax = 1,
+        text = paste0(`Local authority`, " rollout period\n(", start, " - ", end, ")")
+      ),
+      colour = "darkgrey",
+      fill = "darkgrey",
+      alpha = 0.5
+    ) +
+    geom_area(aes(
+      Month,
+      p_p,
+      fill = fct_rev(fam),
+      group = interaction(`Local authority`, fam),
+      text = tooltip
+    ),
+    position = "identity") +
+    scale_fill_sphsu(palette = "mixed", name = "Family type") +
+    coord_cartesian(ylim = c(0, NA)) +
+    scale_y_continuous(
+      "Proportion of max households on universal credit",
+      labels = scales::percent,
+      expand = expansion(mult = c(0, NA))
+    )
+  } %>%
+  ggplotly(tooltip = "text") %>%
+  animation_opts(redraw = TRUE, transition = 0) %>%
+  animation_slider(
+    currentvalue = list(
+      prefix = "Local authority: "
+    )
+  ) %>%
+  config(displayModeBar = FALSE) %>%
+  layout(
+    xaxis = list(fixedrange = TRUE),
+    xaxis2 = list(fixedrange = TRUE),
+    yaxis = list(fixedrange = TRUE),
+    yaxis2 = list(fixedrange = TRUE),
+    legend = list(x = 0.1, y = 0.9),
+    updatemenus = list(list(
+      y = 0.8,
+      # x = 0.5,
+      buttons = list(list(
+        method = "update",
+        args = list("y", 1),
+        label = "Aberdeen CC"
+      ))
+    ))
+  )
+
+
+rollout_by_la_fam <- last_plot()
+
+htmlwidgets::saveWidget(rollout_by_la_fam, file = "hosting/public/by_la_fam/index.html")
+
+
+# Identifying jcps with no data -------------------------------------------
+
+
+start_dates_la %>% 
+  summarise(missing = sum(is.na(jcp)))
+
+keys %>% select(gov, match) %>% 
+  filter(!is.na(gov)) %>% 
+  right_join(jcp_rollout_dates %>% mutate(id = cur_group_rows()), by = c("gov" = "jcp")) %>% 
+  group_by(id) %>% 
+  add_tally() %>% 
+  arrange(desc(n), gov)
+
+
+uc_hh_jcp_ts %>% 
+  filter(str_detect(jcp, "Burton")) %>% 
+  ggplot(aes(Month, n_h, group = jcp)) +
+  geom_line(size = 0.2, colour = "grey") +
+  geom_vline(xintercept = ymd("2016/05/01")) -
+  ggplotly
+
+# Burton is duplicated but 2nd Burton has 0s
+
+uc_hh_jcp_ts %>% 
+  group_by(jcp) %>% 
+  summarise(tot = sum(n_h)) %>% 
+  filter(tot == 0)
+
+# 17 jcps have 0s across period - remove?
+
+uc_hh_jcp_ts %>% 
+  group_by(jcp) %>% 
+  mutate(last_month = n_h[Month == max(Month)]) %>% 
+  filter(last_month == 0) %>% 
+  ggplot(aes(Month, n_h, group = jcp)) +
+  geom_line(size = 0.2, colour = "grey") -
+  ggplotly
+  
+# 90 jcps have 0s in May 2021 - closed? Leave in as start of exposure dates
+# still vaild
+
+# How many jcps have StatXplore data but are not matched to rollout dates?
+
+
+# How many jcps have rollout dates but are not matched to StatXplore records?
+
+
+# LA rollout timetables ---------------------------------------------------
+
+start_dates_la %>%
+  group_by(`Local authority`) %>%
+  summarise(start = min(full_date), end = max(full_date)) %>%
+  mutate(t = time_length(end-start, "months"),
+         months = as.integer(round(t))) %>% 
+  arrange(desc(t))
+
+library(readxl)
+uc_rollout_report <- read_excel("data/uc_statistics_Jan19.xlsx", 
+                                sheet = "4_1", col_types = c("text", 
+                                                             "text", "text", "date", "text", "text"), 
+                                skip = 4)
+
