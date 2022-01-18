@@ -129,6 +129,7 @@ start_dates_la <- keys %>% select(gov, match) %>%
   mutate(jcp = if_else(is.na(match), gov, match)) %>% 
   select(jcp, `Local authority`, full_date)
 
+save(start_dates_la, file = "data/start_dates_la.rdata")
 
 # joining compete dates ---------------------------------------------------
 

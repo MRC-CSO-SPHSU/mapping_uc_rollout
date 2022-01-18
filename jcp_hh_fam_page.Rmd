@@ -1,0 +1,118 @@
+---
+title: "Monthly number of households on Universal Credit by family type"
+output: 
+  flexdashboard::flex_dashboard:
+    vertical_layout: fill
+---
+
+```{r setup, include=FALSE}
+library(flexdashboard)
+library(plotly)
+library(tidyverse)
+library(crosstalk)
+library(lubridate)
+library(htmlwidgets)
+library(SPHSUgraphs)
+`-.gg` <- function(e1, e2) e2(e1)
+
+theme_set(theme_sphsu_light())
+
+load(file = "data/jcp_rollout_dates.rdata")
+load(file = "data/uc_hh_jcp_fam.rdata")
+load("data/start_dates_la.rdata")
+
+la_rollout_periods <- start_dates_la %>%
+  group_by(`Local authority`) %>%
+  summarise(start = min(full_date), end = max(full_date)) %>%
+  arrange(start) %>%
+  mutate(LA = paste(
+    str_pad(as.integer(as_factor(`Local authority`)), 3, pad = "0"), "-", `Local authority`
+  ))
+
+uc_hh_jcp_family_ts <- uc_hh_jcp_fam %>% 
+  select(jcp = `Jobcentre Plus`, Month, n_hh = `Households on Universal Credit`, fam = `Family Type`) %>% 
+  mutate(Month = dmy(paste(1, Month)),
+         jcp = str_to_title(str_replace_all(jcp, "-", " "))) %>% 
+  filter(jcp != "Total") %>% 
+  right_join(jcp_rollout_dates, by = c("jcp")) %>% 
+    group_by(`Local authority`, Month, fam) %>%
+    summarise(n_hh = sum(n_hh), .groups = "drop_last") %>%
+      mutate(fam = factor(fam, levels = c("Single, no children", "Single, with children", "Couple, no children", 
+                                          "Couple, with children", "Unknown or missing family type", "Total"))) %>% 
+    arrange(`Local authority`, desc(Month), desc(fam)) %>% 
+    filter(fam != "Total") %>%
+    mutate(
+      tooltip = paste0(
+        "Local authority: ", `Local authority`,
+        "\nMonth: ", Month,
+        "\nNumber of households, ", str_to_lower(fam), ": ", n_hh
+      ),
+      n_hh = cumsum(n_hh),
+    ) %>%
+    group_by(`Local authority`) %>% 
+    mutate(p_p = n_hh/max(n_hh),
+           fam = fct_reorder(fam, p_p, max, .desc = FALSE)) %>% 
+    ungroup() %>% 
+  select(-n_hh) %>%
+  pivot_wider(names_from = fam, values_from = c(p_p, tooltip)) 
+
+uc_hh_shared <- SharedData$new(uc_hh_jcp_family_ts)
+```
+
+<!-- Input {.sidebar} -->
+<!-- ----------------------------------------------------------------------- -->
+
+
+```{r}
+filter_select("la", "Local authority", uc_hh_shared, ~`Local authority`, allLevels = FALSE, multiple = FALSE)
+```
+
+<!-- Column -->
+<!-- ----------------------------------------------------------------------- -->
+
+<!-- ### Monthly number of households on Universal Credit by family type -->
+
+```{r}
+
+uc_hh_shared %>% 
+plot_ly(
+    x = ~ Month,
+    y = ~ `p_p_Single, no children`,
+    type = "scatter",
+    mode = "line",
+    fill = "tozeroy",
+    name = "Single, no children",
+    text = ~ `tooltip_Single, no children`,
+    hoverinfo = "text"
+  ) %>%
+  add_trace(
+    y = ~ `p_p_Single, with children`,
+    text = ~ `tooltip_Single, with children`,
+    name = "Single, with children"
+  ) %>%
+  add_trace(
+    y = ~ `p_p_Couple, no children`,
+    text = ~ `tooltip_Couple, no children`,
+    name = "Couple, no children"
+  ) %>%
+  add_trace(
+    y = ~ `p_p_Couple, with children`,
+    text = ~ `tooltip_Couple, with children`,
+    name = "Couple, with children"
+  ) %>%
+  add_trace(
+    y = ~ `p_p_Unknown or missing family type`,
+    text = ~ `tooltip_Unknown or missing family type`,
+    name = "Unknown or missing family type"
+  ) %>% 
+  config(displayModeBar = FALSE) %>%
+  layout(
+    xaxis = list(fixedrange = TRUE),
+    xaxis2 = list(fixedrange = TRUE),
+    yaxis = list(fixedrange = TRUE, title = "Proportion of max households on UC"),
+    yaxis2 = list(fixedrange = TRUE),
+    legend = list(x = 0.1, y = 0.9)
+  )
+
+
+```
