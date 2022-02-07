@@ -5,6 +5,16 @@ output:
     vertical_layout: fill
 ---
 
+```{css, echo = FALSE}
+#la{
+    position: absolute;
+    z-index: 100;
+    left: 100px;
+    max-width: 60%;
+    min-width: 600px
+}
+```
+
 ```{r setup, include=FALSE}
 library(flexdashboard)
 library(plotly)
@@ -35,6 +45,7 @@ uc_hh_jcp_family_ts <- uc_hh_jcp_fam %>%
          jcp = str_to_title(str_replace_all(jcp, "-", " "))) %>% 
   filter(jcp != "Total") %>% 
   right_join(jcp_rollout_dates, by = c("jcp")) %>% 
+  # filter(str_detect(`Local authority`, "Aberdeen")) %>%
     group_by(`Local authority`, Month, fam) %>%
     summarise(n_hh = sum(n_hh), .groups = "drop_last") %>%
       mutate(fam = factor(fam, levels = c("Single, no children", "Single, with children", "Couple, no children", 
@@ -57,20 +68,14 @@ uc_hh_jcp_family_ts <- uc_hh_jcp_fam %>%
   pivot_wider(names_from = fam, values_from = c(p_p, tooltip)) 
 
 uc_hh_shared <- SharedData$new(uc_hh_jcp_family_ts)
-```
 
-<!-- Input {.sidebar} -->
-<!-- ----------------------------------------------------------------------- -->
+```
 
 
 ```{r}
 filter_select("la", "Local authority", uc_hh_shared, ~`Local authority`, allLevels = FALSE, multiple = FALSE)
+
 ```
-
-<!-- Column -->
-<!-- ----------------------------------------------------------------------- -->
-
-<!-- ### Monthly number of households on Universal Credit by family type -->
 
 ```{r}
 
@@ -111,8 +116,10 @@ plot_ly(
     xaxis2 = list(fixedrange = TRUE),
     yaxis = list(fixedrange = TRUE, title = "Proportion of max households on UC"),
     yaxis2 = list(fixedrange = TRUE),
-    legend = list(x = 0.1, y = 0.9)
-  )
+    legend = list(x = 0.1, y = 0.75,
+                  itemclick = FALSE,
+                  itemdoubleclick = FALSE)
+  ) 
 
 
 ```
