@@ -73,9 +73,13 @@ uc_hh_shared <- SharedData$new(uc_hh_jcp_family_ts)
 
 
 ```{r}
-filter_select("la", "Local authority", uc_hh_shared, ~`Local authority`, allLevels = FALSE, multiple = FALSE)
+filter_select("la", "Local authority", uc_hh_shared, ~`Local authority`, allLevels = FALSE, 
+              # selected = "Aberdeen City Council",
+              multiple = FALSE
+              )
 
 ```
+
 
 ```{r}
 
@@ -122,4 +126,12 @@ plot_ly(
   ) 
 
 
+```
+
+```{js}
+function filter_default() {
+    document.getElementById("la").getElementsByClassName("selectized") 
+[0].selectize.setValue("Aberdeen City Council", false);
+ }
+$(document).ready(filter_default)
 ```
