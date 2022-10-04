@@ -65,3 +65,95 @@ grViz("digraph {
       F -> D
       G -> A
       }")
+
+grViz(
+  'digraph {
+    graph[]
+    node[shape=plaintext, fontname=Arial]
+    edge[]
+    "Employment status change" -> Employment
+    "Employment status change" -> UC
+    "First payment" -> "Immediate MH"
+    "First payment" -> "Ongoing MH"
+    "First payment" -> Poverty
+    "Potential Income" -> Employment
+    "Potential Income" -> Income
+    Conditionality -> "Immediate MH"
+    Conditionality -> "Ongoing MH"
+    "Benefit claim change" -> UC
+    "Benefit claim change" -> "Immediate MH"
+    "Benefit claim change" -> "Potential Income"
+    Employment -> "Ongoing MH"
+    Employment -> Income
+    Income -> "First payment"
+    Income -> "Ongoing MH"
+    Income -> Poverty
+    Poverty -> "Ongoing MH"
+    UC -> "First payment"
+    UC -> "Potential Income"
+    UC -> Conditionality
+  {rank = same; UC; "Potential Income"; "Income"; "Ongoing MH"}
+  {rank = max; "Employment status change"; Employment; Poverty}
+  {rank = min; "First payment"; "Conditionality"; "Immediate MH"}
+}'
+)
+
+grViz(
+  'digraph {
+    graph[]
+    node[shape=plaintext, fontname=Arial]
+    edge[]
+    "Employment status change" -> Employment
+    "Employment status change" -> UC
+    "First payment" -> "Immediate MH"
+    "First payment" -> "Ongoing MH"
+    "First payment" -> Poverty
+    "Potential Income" -> Employment
+    "Potential Income" -> Income
+    Conditionality -> "Immediate MH"
+    Conditionality -> "Ongoing MH"
+    "Benefit claim change" -> UC
+    "Benefit claim change" -> "Immediate MH"
+    "Benefit claim change" -> "Potential Income"
+    Employment -> "Ongoing MH"
+    Employment -> Income
+    Income -> "First payment"
+    Income -> "Ongoing MH"
+    Income -> Poverty
+    Poverty -> "Ongoing MH"
+    UC -> "First payment"
+    UC -> "Potential Income"
+    UC -> Conditionality
+  {rank = same; UC; "Potential Income"; "Income"; "Ongoing MH"}
+  {rank = max; "Employment status change"; Employment; Poverty}
+  {rank = min; "First payment"; "Conditionality"; "Immediate MH"}
+}'
+)
+
+
+# Attempting a full DAG of 'normal' UC exposure ---------------------------
+
+grViz(
+  'digraph {
+    graph[]
+    node[shape=plaintext, fontname=Arial]
+    edge[]
+    "Potential Income" -> Employment
+    "Potential Income" -> Income
+    Conditionality -> Employment
+    Conditionality -> Income
+    Conditionality -> MH
+    Eligibility -> "Potential Income"
+    Eligibility -> Employment
+    Eligibility -> MH
+    Eligibility -> Poverty
+    Eligibility -> UC
+    Employment -> MH
+    Employment <-> Income
+    Income -> MH
+    Income -> Poverty
+    Poverty -> MH
+    UC -> "Potential Income"
+    UC -> Conditionality
+  }'
+)
