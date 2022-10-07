@@ -157,3 +157,22 @@ grViz(
     UC -> Conditionality
   }'
 )
+
+grViz(
+  'digraph {
+    graph[]
+    node[shape=plaintext, fontname=Arial]
+    edge[]
+    "Prior MH" -> "Mental Health"
+    "Prior MH" -> Employment
+    "UC rollout" -> "Mental Health" 
+    "UC rollout" -> Employment
+    "UC rollout" -> Income
+    Employment -> "Mental Health"
+    Employment -> Income
+    Income -> "Mental Health"
+  {rank =same; "UC rollout"; Employment; Income; "Mental Health"}
+  {rank = max; "Prior MH"}
+  }'
+  
+)
