@@ -27,31 +27,27 @@ library(SPHSUgraphs)
 
 theme_set(theme_sphsu_light())
 
-load(file = "data/jcp_rollout_dates.rdata")
-load(file = "data/uc_hh_jcp_fam.rdata")
-load("data/start_dates_la.rdata")
+# load(file = "data/jcp_rollout_dates.rdata")
+# load(file = "data/uc_hh_jcp_fam.rdata")
+# load("data/start_dates_la.rdata")
+load(file = "data/uc_hh_la_fam.rdata")
 
-la_rollout_periods <- start_dates_la %>%
-  group_by(`Local authority`) %>%
-  summarise(start = min(full_date), end = max(full_date)) %>%
-  arrange(start) %>%
-  mutate(LA = paste(
-    str_pad(as.integer(as_factor(`Local authority`)), 3, pad = "0"), "-", `Local authority`
-  ))
+# la_rollout_periods <- start_dates_la %>%
+#   group_by(`Local authority`) %>%
+#   summarise(start = min(full_date), end = max(full_date)) %>%
+#   arrange(start) %>%
+#   mutate(LA = paste(
+#     str_pad(as.integer(as_factor(`Local authority`)), 3, pad = "0"), "-", `Local authority`
+#   ))
 
-uc_hh_jcp_family_ts <- uc_hh_jcp_fam %>% 
-  select(jcp = `Jobcentre Plus`, Month, n_hh = `Households on Universal Credit`, fam = `Family Type`) %>% 
-  mutate(Month = dmy(paste(1, Month)),
-         jcp = str_to_title(str_replace_all(jcp, "-", " "))) %>% 
-  filter(jcp != "Total") %>% 
-  right_join(jcp_rollout_dates, by = c("jcp")) %>% 
-  # filter(str_detect(`Local authority`, "Aberdeen")) %>%
-    group_by(`Local authority`, Month, fam) %>%
-    summarise(n_hh = sum(n_hh), .groups = "drop_last") %>%
+# uc_hh_jcp_family_ts <- uc_hh_jcp_fam %>% 
+uc_hh_la_fam_ts <- uc_hh_la_fam |> 
+    select(`Local authority` = 1, Month, n_hh = `Households on Universal Credit`, fam = `Family Type`) %>% 
+  mutate(Month = dmy(paste(1, Month))) %>% 
       mutate(fam = factor(fam, levels = c("Single, no children", "Single, with children", "Couple, no children", 
-                                          "Couple, with children", "Unknown or missing family type", "Total"))) %>% 
+                                          "Couple, with children", "Unknown or missing family type"))) %>% 
     arrange(`Local authority`, desc(Month), desc(fam)) %>% 
-    filter(fam != "Total") %>%
+  group_by(`Local authority`, Month) |> 
     mutate(
       tooltip = paste0(
         "Local authority: ", `Local authority`,
@@ -67,7 +63,7 @@ uc_hh_jcp_family_ts <- uc_hh_jcp_fam %>%
   select(-n_hh) %>%
   pivot_wider(names_from = fam, values_from = c(p_p, tooltip)) 
 
-uc_hh_shared <- SharedData$new(uc_hh_jcp_family_ts)
+uc_hh_shared <- SharedData$new(uc_hh_la_fam_ts)
 
 ```
 
@@ -131,7 +127,7 @@ plot_ly(
 ```{js}
 function filter_default() {
     document.getElementById("la").getElementsByClassName("selectized") 
-[0].selectize.setValue("Aberdeen City Council", false);
+[0].selectize.setValue("Aberdeen City", false);
  }
 $(document).ready(filter_default)
 ```
