@@ -27,20 +27,9 @@ library(SPHSUgraphs)
 
 theme_set(theme_sphsu_light())
 
-# load(file = "data/jcp_rollout_dates.rdata")
-# load(file = "data/uc_hh_jcp_fam.rdata")
-# load("data/start_dates_la.rdata")
 load(file = "data/uc_hh_la_fam.rdata")
 
-# la_rollout_periods <- start_dates_la %>%
-#   group_by(`Local authority`) %>%
-#   summarise(start = min(full_date), end = max(full_date)) %>%
-#   arrange(start) %>%
-#   mutate(LA = paste(
-#     str_pad(as.integer(as_factor(`Local authority`)), 3, pad = "0"), "-", `Local authority`
-#   ))
 
-# uc_hh_jcp_family_ts <- uc_hh_jcp_fam %>% 
 uc_hh_la_fam_ts <- uc_hh_la_fam |> 
     select(`Local authority` = 1, Month, n_hh = `Households on Universal Credit`, fam = `Family Type`) %>% 
   mutate(Month = dmy(paste(1, Month))) %>% 
