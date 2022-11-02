@@ -1,0 +1,10 @@
+.Rproj.user
+.Rhistory
+.RData
+.Ruserdata
+api_key.txt
+/data/*
+!/data/*.json
+/hosting
+/R/HEED DAGs.R
+.git(1)
