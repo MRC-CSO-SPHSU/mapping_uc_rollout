@@ -176,3 +176,137 @@ grViz(
   }'
   
 )
+
+
+# DAGging analyses --------------------------------------------------------
+
+
+
+grViz(
+  'digraph {
+    graph[]
+    node[shape=plaintext, fontname=Arial]
+    edge[]
+    point1 [shape = point, style=invis width = 0]
+  {
+    rank = same
+    "Universal Credit" -> point1 [dir = none minlen = 2]
+    point1 -> "Mental Health" [minlen = 2]
+  }
+  "Employment\nParent\nDisabled\nStudent\nCaring responsibilities" -> point1
+  }'
+  
+)
+
+grViz(
+'digraph {
+graph[]
+node[shape=plaintext, fontname=Arial]
+edge[]
+"UC rollout" -> "Mental Health" [minlen = 5]
+"UC rollout" -> Employment
+"UC rollout" -> "Benefit Income"
+Employment -> "Mental Health"
+Employment -> "Benefit Income"
+"Benefit Income" -> "Mental Health"
+{rank =same; "UC rollout"; "Mental Health"}
+{rank = same; Employment; "Benefit Income"}
+}'
+)
+
+
+grViz(
+  'digraph {
+    graph[]
+    node[shape=plaintext, fontname=Arial]
+    edge[]
+    "UC rollout" -> "Mental Health" [minlen = 10]
+    "UC rollout" -> Employment
+    "UC rollout" -> "Benefit Income"
+    Employment -> "Mental Health"
+    Employment -> "Earned Income"
+    "Earned Income" -> "Benefit Income"
+    "UC rollout" -> "Earned Income"
+    "Earned Income" -> "Mental Health"
+    "Benefit Income" -> "Mental Health"
+  {rank =same; "UC rollout"; "Mental Health"}
+  {rank = same; Employment; "Earned Income"; "Benefit Income"}
+  }'
+  
+)
+
+grViz(
+  'digraph {
+    graph[]
+    node[shape=plaintext, fontname=Arial]
+    edge[]
+    "UC rollout" -> "Mental Health" [minlen = 10]
+    "UC rollout" -> Employment
+    "UC rollout" -> "Benefit Income"
+    Employment -> "Mental Health"
+    Employment -> "Hours Worked"
+    "Hours Worked" -> "Benefit Income"
+    "UC rollout" -> "Hours Worked"
+    "Hours Worked" -> "Mental Health"
+    "Benefit Income" -> "Mental Health"
+  {rank =same; "UC rollout"; "Mental Health"}
+  {rank = same; Employment; "Hours Worked"; "Benefit Income"}
+  }'
+  
+)
+
+grViz(
+  'digraph {
+    graph[]
+    node[shape=plaintext, fontname=Arial]
+    edge[]
+    "UC rollout" -> "Mental Health" [minlen = 10]
+    "UC rollout" -> Employment
+    "UC rollout" -> "Benefit Income"
+    "UC rollout" -> "Hours Worked"
+    Employment -> "Mental Health"
+    Employment -> "Hours Worked"
+    "Hours Worked" -> "Mental Health"
+    "Earned Income" -> "Benefit Income"
+    "UC rollout" -> "Earned Income"
+    "Hours Worked" -> "Earned Income"
+    "Earned Income" -> "Mental Health"
+    "Benefit Income" -> "Mental Health"
+  {rank =same; "UC rollout"; "Mental Health"}
+  {rank = same; Employment; "Hours Worked"; "Earned Income"; "Benefit Income"}
+  }'
+  
+)
+
+grViz(
+  '
+      digraph {
+      graph []
+      node [shape = plaintext, fontname = Arial]
+      edge []
+      
+      A [label = "Universal Credit\nrollout"]
+      C [label = "Pre-UC mental health"]
+      U [label = "Unmeasured\nConfounders"]
+      Y [label = "Post-UC mental health"]
+      I1 [style = invis]
+      I2 [style = invis]
+      
+  {edge [style = invis]
+    U -> I1
+    I1 -> A
+  }
+  {edge [style = invis]
+    C -> I2
+    I2 -> A
+  }
+      
+      U -> A -> Y
+      U -> C -> Y
+      U -> Y
+  {rank = min; C; I2}
+  {rank = max; U; I1}
+  {rank = same; A; Y}
+      }
+      '
+)
