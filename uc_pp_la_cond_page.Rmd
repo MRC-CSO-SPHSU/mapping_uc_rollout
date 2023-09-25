@@ -1,0 +1,146 @@
+---
+title: "Monthly number of people on Universal Credit by conditionality regime"
+output: 
+  flexdashboard::flex_dashboard:
+    vertical_layout: fill
+---
+
+```{css, echo = FALSE}
+#la{
+    position: absolute;
+    z-index: 100;
+    left: 100px;
+    max-width: 60%;
+    min-width: 600px
+}
+```
+
+```{r setup, include=FALSE}
+library(flexdashboard)
+library(plotly)
+library(tidyverse)
+library(crosstalk)
+library(lubridate)
+library(htmlwidgets)
+library(SPHSUgraphs)
+`-.gg` <- function(e1, e2) e2(e1)
+
+theme_set(theme_sphsu_light())
+
+load(file = "data/uc_pp_la_cond.rdata")
+
+uc_pp_la_cond_ts <- uc_pp_la_cond_n |> 
+    select(cond = `Conditionality Regime`,
+         la = `National - Regional - LA - OAs`,
+         Month,
+         uc = `People on Universal Credit`) |> 
+  mutate(Month = my(Month)) |> 
+  filter(cond != "Total",
+         Month != ymd("2023-06-01")) |> 
+  mutate(cond = factor(
+    cond,
+    levels = c(
+      "Unknown or missing regime",
+      "Planning for work",
+      "Preparing for work",
+      "Working - no requirements",
+      "Working - with requirements",
+      "No work requirements",
+      "Searching for work"
+    )
+  )) |> 
+  arrange(la, desc(Month), cond)  |>  
+  group_by(la, Month) |> 
+    mutate(
+      tooltip = paste0(
+        "Local authority: ", la,
+        "\nMonth: ", Month,
+        "\nNumber of people ", str_to_lower(cond), ": ", uc
+      ),
+      uc = cumsum(uc),
+    ) |> 
+    group_by(la) |> 
+    mutate(p_p = uc/max(uc)) |>  
+    ungroup() |> 
+  select(-uc) |> 
+  pivot_wider(names_from = cond, values_from = c(p_p, tooltip)) 
+
+uc_pp_shared <- SharedData$new(uc_pp_la_cond_ts)
+
+```
+
+
+```{r}
+filter_select("la", "Local authority", uc_pp_shared, ~la, allLevels = FALSE, 
+              # selected = "Aberdeen City Council",
+              multiple = FALSE
+              )
+
+```
+
+
+```{r}
+
+uc_pp_shared %>% 
+plot_ly(
+    x = ~ Month,
+    type = "scatter",
+    mode = "line",
+    fill = "tozeroy",
+    hoverinfo = "text",
+    y = ~ `p_p_Searching for work`,
+    text = ~ `tooltip_Searching for work`,
+    name = "Searching for work"
+  ) %>%
+  add_trace(
+    y = ~ `p_p_No work requirements`,
+    text = ~ `tooltip_No work requirements`,
+    name = "No work requirements"
+  ) %>% 
+  add_trace(
+    y = ~ `p_p_Working - with requirements`,
+    text = ~ `tooltip_Working - with requirements`,
+    name = "Working - with requirements"
+  ) %>% 
+  add_trace(
+    y = ~ `p_p_Working - no requirements`,
+    text = ~ `tooltip_Working - no requirements`,
+    name = "Working - no requirements"
+  ) %>% 
+  add_trace(
+    y = ~ `p_p_Preparing for work`,
+    text = ~ `tooltip_Preparing for work`,
+    name = "Preparing for work"
+  ) %>% 
+  add_trace(
+    y = ~ `p_p_Planning for work`,
+    text = ~ `tooltip_Planning for work`,
+    name = "Planning for work"
+  ) %>% 
+  add_trace(
+    y = ~ `p_p_Unknown or missing regime`,
+    text = ~ `tooltip_Unknown or missing regime`,
+    name = "Unknown or missing regime"
+  ) %>% 
+  
+  config(displayModeBar = FALSE) %>%
+  layout(
+    xaxis = list(fixedrange = TRUE),
+    xaxis2 = list(fixedrange = TRUE),
+    yaxis = list(fixedrange = TRUE, title = "Proportion of max persons on UC"),
+    yaxis2 = list(fixedrange = TRUE),
+    legend = list(x = 0.1, y = 0.75,
+                  itemclick = FALSE,
+                  itemdoubleclick = FALSE)
+  ) 
+
+
+```
+
+```{js}
+function filter_default() {
+    document.getElementById("la").getElementsByClassName("selectized") 
+[0].selectize.setValue("Aberdeen City", false);
+ }
+$(document).ready(filter_default)
+```

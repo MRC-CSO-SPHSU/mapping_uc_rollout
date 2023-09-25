@@ -255,6 +255,10 @@ grViz(
   
 )
 
+
+# Super all-mediators DAG -------------------------------------------------
+
+
 grViz(
   'digraph {
     graph[]
@@ -277,6 +281,32 @@ grViz(
   }'
   
 )
+
+
+# Simpler, 3-mediator DAG -------------------------------------------------
+
+
+grViz(
+  'digraph {
+    graph[]
+    node[shape=plaintext, fontname=Arial]
+    edge[]
+    "UC rollout" -> "Mental Health" [minlen = 10]
+    "UC rollout" -> Employment
+    "UC rollout" -> "Benefit Income"
+    "UC rollout" -> "Hours Worked"
+    Employment -> "Mental Health"
+    Employment -> "Hours Worked"
+    "Hours Worked" -> "Benefit Income"
+    "Hours Worked" -> "Mental Health"
+    "Benefit Income" -> "Mental Health"
+  {rank =same; "UC rollout"; "Mental Health"}
+  {rank = same; Employment; "Hours Worked"; "Benefit Income"}
+  }'
+  
+)
+
+# Hernan DiD DAG --------------
 
 grViz(
   '
@@ -310,3 +340,234 @@ grViz(
       }
       '
 )
+
+
+# mediated ----------------------------------------------------------------
+library(manipulateWidget)
+
+#gr1
+gr1 <- grViz(
+  'digraph {
+    graph[label = "a)", labelloc = t, labeljust = l]
+    node[shape=plaintext, fontname=Arial]
+    edge[color = red, style = dashed]
+    "UC rollout" [label = <<b>UC rollout</b>>]
+    "UC rollout" -> "Mental Health" [minlen = 10, style = solid]
+    "UC rollout" -> Employment
+    "UC rollout" -> "Benefit Income"
+    "UC rollout" -> "Hours Worked"
+    Employment -> "Mental Health"
+    Employment -> "Hours Worked"
+    "Hours Worked" -> "Benefit Income"
+    "Hours Worked" -> "Mental Health"
+    "Benefit Income" -> "Mental Health"
+  {rank =min; "UC rollout"; "Mental Health"}
+  {rank = same; Employment; "Hours Worked"; "Benefit Income"}
+  }'
+)
+
+
+#gr2
+gr2 <- grViz(
+  'digraph {
+    graph[label = "c)", labelloc = t, labeljust = l]
+    node[shape=plaintext, fontname=Arial]
+    edge[color = black, style = solid]
+    "Hours Worked" [label = <<b>Hours Worked</b>>]
+    "UC rollout", Employment [shape = box]
+    "UC rollout" -> "Mental Health" [minlen = 10]
+    "UC rollout" -> Employment
+    "UC rollout" -> "Benefit Income"
+    "UC rollout" -> "Hours Worked"
+    Employment -> "Mental Health" 
+    Employment -> "Hours Worked" 
+    "Hours Worked" -> "Benefit Income" [style = dashed, color = red]
+    "Hours Worked" -> "Mental Health" [color = red]
+    "Benefit Income" -> "Mental Health" [style = dashed, color = red]
+  {rank =min; "UC rollout"; "Mental Health"}
+  {rank = same; Employment; "Hours Worked"; "Benefit Income"}
+  }'
+  
+)
+
+
+gr3 <- grViz(
+  'digraph {
+    graph[label = "b)", labelloc = t, labeljust = l]
+    node[shape=plaintext, fontname=Arial]
+    edge[color = black, style = solid]
+    "Employment" [label = <<b>Employment</b>>]
+    "UC rollout" [shape = box]
+    "UC rollout" -> "Mental Health" [minlen = 10]
+    "UC rollout" -> Employment
+    "UC rollout" -> "Benefit Income"
+    "UC rollout" -> "Hours Worked"
+    Employment -> "Mental Health" [color = red]
+    Employment -> "Hours Worked" [style = dashed, color = red]
+    "Hours Worked" -> "Benefit Income" [style = dashed, color = red]
+    "Hours Worked" -> "Mental Health" [style = dashed, color = red]
+    "Benefit Income" -> "Mental Health" [style = dashed, color = red]
+  {rank =min; "UC rollout"; "Mental Health"}
+  {rank = same; Employment; "Hours Worked"; "Benefit Income"}
+  }'
+  
+)
+
+
+
+combineWidgets(gr1, gr3, gr2, nrow = 3, ncol = 1)
+
+
+gr2b <-
+  grViz(
+  'digraph {
+    graph[label = "b)", labelloc = t, labeljust = l]
+    node[shape=plaintext, fontname=Arial]
+    edge[color = red, style = dashed]
+    "UC rollout" [label = <<b>UC rollout</b>>]
+    "UC rollout" -> "Mental Health" [minlen = 10, style = solid]
+    "UC rollout" -> "Employment"
+    "Employment" -> "Mental Health"
+  {rank =min; "UC rollout"; "Mental Health"}
+  }'
+)
+
+gr3b <-
+  grViz(
+  'digraph {
+    graph[label = "c)", labelloc = t, labeljust = l]
+    node[shape=plaintext, fontname=Arial]
+    edge[color = red, style = dashed]
+    "UC rollout" [label = <<b>UC rollout</b>>]
+    "UC rollout" -> "Mental Health" [minlen = 10, style = solid]
+    "UC rollout" -> "Hours Worked"
+    "Hours Worked" -> "Mental Health"
+  {rank =min; "UC rollout"; "Mental Health"}
+  }'
+)
+
+combineWidgets(gr1, gr2b, gr3b, nrow = 3)  
+
+
+grViz(
+  'digraph {
+    graph[label = "a)", labelloc = t, labeljust = l]
+    node[shape=plaintext, fontname=Arial]
+    edge[color = red, style = dashed]
+    "UC rollout" [label = <<b>UC rollout</b>>]
+    "UC rollout" -> "Mental Health" [minlen = 10, style = solid]
+    "UC rollout" -> Employment
+    Employment -> "Benefit Income"
+    "UC rollout" -> "Benefit Income"
+    Employment -> "Mental Health"
+    "Benefit Income" -> "Mental Health"
+  {rank =min; "UC rollout"; "Mental Health"}
+  {rank = same; Employment; "Benefit Income"}
+  }'
+
+)
+
+
+# controlled --------------------------------------------------------------
+
+
+gr1 <- grViz(
+  'digraph {
+    graph[label = "a)", labelloc = t, labeljust = l]
+    node[shape=plaintext, fontname=Arial]
+    edge[color = red, style = dashed]
+    "UC rollout" [label = <<b>UC rollout</b>>]
+    "UC rollout" -> "Mental Health" [minlen = 10, style = solid]
+    "UC rollout" -> Employment
+    Employment -> "Benefit Income"
+    "UC rollout" -> "Benefit Income"
+    Employment -> "Mental Health"
+    "Benefit Income" -> "Mental Health"
+  {rank =min; "UC rollout"; "Mental Health"}
+  {rank = same; Employment; "Benefit Income"}
+  }'
+  
+)
+
+gr2_unlabelled <- grViz(
+  'digraph {
+    graph[label = "b)", labelloc = t, labeljust = l]
+    node[shape=plaintext, fontname=Arial]
+    edge[color = red, style = dashed]
+    "UC rollout" [label = <<b>UC rollout</b>>]
+    "UC rollout" -> "Mental Health" [minlen = 10, style = solid]
+    "UC rollout" -> Employment [color = white]
+    Employment -> "Benefit Income" [color = white]
+    "UC rollout" -> "Benefit Income" [color = white]
+    Employment -> "Mental Health"
+    "Benefit Income" -> "Mental Health"
+  {rank =min; "UC rollout"; "Mental Health"}
+  {rank = same; Employment; "Benefit Income"}
+  }'
+  
+)
+
+combineWidgets(gr1, gr2_unlabelled, ncol = 1)
+
+grViz(
+  'digraph {
+    graph[label = "b)", labelloc = t, labeljust = l]
+    node[shape=plaintext, fontname=Arial]
+    edge[color = red, style = dashed]
+    "UC rollout" [label = <<b>UC rollout</b>>]
+    "UC rollout" -> "Mental Health" [minlen = 8, style = solid, label = <&beta;<sub>0</sub>>]
+    "UC rollout" -> Employment [color = white]
+    Employment -> "Benefit Income" [color = white, label = <&#946;<sub>1</sub>+&beta;<sub>2</sub>>]
+    "UC rollout" -> "Benefit Income" [color = white]
+    Employment -> "Mental Health"
+    "Benefit Income" -> "Mental Health"
+  {rank =min; "UC rollout"; "Mental Health"}
+  {rank = same; Employment; "Benefit Income"}
+  }'
+  
+)
+
+
+# simplified separate graphs ----------------------------------------------
+# 730 x 280 px
+
+grViz(
+  'digraph {
+    node[shape=plaintext, fontname=Arial]
+    edge[color = red, style = dashed]
+    UC [label = <<b>UC exposure</b>>]
+    MH [label = "Mental Health"]
+    E [label = Employment]
+    BI [label = "Benefit Income"]
+    UC -> MH [minlen = 10, style = solid]
+    UC -> E 
+    E -> BI 
+    UC -> BI 
+    E -> MH
+    BI -> MH
+  {rank =min; UC; MH}
+  {rank = same; E; BI}
+  }'
+  
+)
+
+grViz(
+  'digraph {
+    node[shape=plaintext, fontname=Arial]
+    edge[color = red, style = dashed]
+    UC [label = <<b>UC exposure</b>>]
+    MH [label = "Mental Health"]
+    E [label = Employment]
+    BI [label = "Benefit Income"]
+    UC -> MH [minlen = 10, style = solid]
+    UC -> E [color = white]
+    E -> BI [color = white]
+    UC -> BI [color = white]
+    E -> MH
+    BI -> MH
+  {rank =min; UC; MH}
+  {rank = same; E; BI}
+  }'
+  
+)
+

@@ -1,0 +1,108 @@
+---
+title: "Monthly number of people on Universal Credit by employment status"
+output: 
+  flexdashboard::flex_dashboard:
+    vertical_layout: fill
+---
+
+```{css, echo = FALSE}
+#la{
+    position: absolute;
+    z-index: 100;
+    left: 100px;
+    max-width: 60%;
+    min-width: 600px
+}
+```
+
+```{r setup, include=FALSE}
+library(flexdashboard)
+library(plotly)
+library(tidyverse)
+library(crosstalk)
+library(lubridate)
+library(htmlwidgets)
+library(SPHSUgraphs)
+`-.gg` <- function(e1, e2) e2(e1)
+
+theme_set(theme_sphsu_light())
+
+load(file = "data/uc_pp_la_empl.rdata")
+
+uc_pp_la_empl_ts <- uc_pp_la_empl_n |> 
+    select(empl = `Employment indicator`, 
+         la = `National - Regional - LA - OAs`,
+         Month,
+         uc = `People on Universal Credit`) |> 
+  mutate(Month = my(Month)) |> 
+  filter(empl != "Total",
+         Month != ymd("2023-06-01")) |> 
+  arrange(la, desc(Month), desc(empl))  |>  
+  group_by(la, Month) |> 
+    mutate(
+      tooltip = paste0(
+        "Local authority: ", la,
+        "\nMonth: ", Month,
+        "\nNumber of people ", str_to_lower(empl), ": ", uc
+      ),
+      uc = cumsum(uc),
+    ) |> 
+    group_by(la) |> 
+    mutate(p_p = uc/max(uc)) |>  
+    ungroup() |> 
+  select(-uc) |> 
+  pivot_wider(names_from = empl, values_from = c(p_p, tooltip)) 
+
+uc_pp_shared <- SharedData$new(uc_pp_la_empl_ts)
+
+```
+
+
+```{r}
+filter_select("la", "Local authority", uc_pp_shared, ~la, allLevels = FALSE, 
+              # selected = "Aberdeen City Council",
+              multiple = FALSE
+              )
+
+```
+
+
+```{r}
+
+uc_pp_shared %>% 
+plot_ly(
+    x = ~ Month,
+    y = ~ `p_p_In employment`,
+    type = "scatter",
+    mode = "line",
+    fill = "tozeroy",
+    name = "In employment",
+    text = ~ `tooltip_In employment`,
+    hoverinfo = "text"
+  ) %>%
+  add_trace(
+    y = ~ `p_p_Not in employment`,
+    text = ~ `tooltip_Not in employment`,
+    name = "Not in employment"
+  ) %>% 
+  config(displayModeBar = FALSE) %>%
+  layout(
+    xaxis = list(fixedrange = TRUE),
+    xaxis2 = list(fixedrange = TRUE),
+    yaxis = list(fixedrange = TRUE, title = "Proportion of max persons on UC"),
+    yaxis2 = list(fixedrange = TRUE),
+    legend = list(x = 0.1, y = 0.75,
+                  itemclick = FALSE,
+                  itemdoubleclick = FALSE)
+  ) 
+
+
+```
+
+```{js}
+function filter_default() {
+    document.getElementById("la").getElementsByClassName("selectized") 
+[0].selectize.setValue("Aberdeen City", false);
+ }
+$(document).ready(filter_default)
+```

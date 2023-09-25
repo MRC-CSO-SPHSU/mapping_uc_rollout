@@ -30,27 +30,44 @@ theme_set(theme_sphsu_light())
 load(file = "data/uc_hh_la_fam.rdata")
 
 
-uc_hh_la_fam_ts <- uc_hh_la_fam |> 
-    select(`Local authority` = 1, Month, n_hh = `Households on Universal Credit`, fam = `Family Type`) %>% 
-  mutate(Month = dmy(paste(1, Month))) %>% 
-      mutate(fam = factor(fam, levels = c("Single, no children", "Single, with children", "Couple, no children", 
-                                          "Couple, with children", "Unknown or missing family type"))) %>% 
-    arrange(`Local authority`, desc(Month), desc(fam)) %>% 
-  group_by(`Local authority`, Month) |> 
-    mutate(
-      tooltip = paste0(
-        "Local authority: ", `Local authority`,
-        "\nMonth: ", Month,
-        "\nNumber of households, ", str_to_lower(fam), ": ", n_hh
-      ),
-      n_hh = cumsum(n_hh),
-    ) %>%
-    group_by(`Local authority`) %>% 
-    mutate(p_p = n_hh/max(n_hh),
-           fam = fct_reorder(fam, p_p, max, .desc = FALSE)) %>% 
-    ungroup() %>% 
+
+uc_hh_la_fam_ts <- uc_hh_la_fam |>
+  select(`Local authority` = 1,
+         Month,
+         n_hh = `Households on Universal Credit`,
+         fam = `Family Type`) %>%
+  mutate(Month = dmy(paste(1, Month))) %>%
+  mutate(fam = factor(
+    fam,
+    levels = c(
+      "Single, no children",
+      "Single, with children",
+      "Couple, no children",
+      "Couple, with children",
+      "Unknown or missing family type"
+    )
+  )) %>%
+  arrange(`Local authority`, desc(Month), desc(fam)) %>%
+  group_by(`Local authority`, Month) |>
+  mutate(
+    tooltip = paste0(
+      "Local authority: ",
+      `Local authority`,
+      "\nMonth: ",
+      Month,
+      "\nNumber of households, ",
+      str_to_lower(fam),
+      ": ",
+      n_hh
+    ),
+    n_hh = cumsum(n_hh),
+  ) %>%
+  group_by(`Local authority`) %>%
+  mutate(p_p = n_hh / max(n_hh),
+         fam = fct_reorder(fam, p_p, max, .desc = FALSE)) %>%
+  ungroup() %>%
   select(-n_hh) %>%
-  pivot_wider(names_from = fam, values_from = c(p_p, tooltip)) 
+  pivot_wider(names_from = fam, values_from = c(p_p, tooltip))
 
 uc_hh_shared <- SharedData$new(uc_hh_la_fam_ts)
 
