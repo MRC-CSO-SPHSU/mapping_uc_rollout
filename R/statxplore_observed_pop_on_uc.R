@@ -21,7 +21,7 @@ n_uc_pp <- n_uc$dfs$`People on Universal Credit`
 n_uc_pp <- n_uc_pp |> 
   mutate(date = my(Month))
 
-wa_pop <- wa_pop <- read_csv("data/lfs_pop.csv", col_names = c("year_month", "pop"), 
+wa_pop <- read_csv("data/lfs_pop.csv", col_names = c("year_month", "pop"), 
                              skip = 8)
 
 pop_uc <- wa_pop |>

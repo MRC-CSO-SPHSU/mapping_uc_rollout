@@ -11,10 +11,11 @@ uc_rollout_untidy <- uc_rollout_page %>%
   html_elements(".govspeak h2, .govspeak h2 + table, .govspeak h3, .govspeak h3 + table") %>% 
   {ifelse(!is.na(html_attr(., "id")), 
     html_text(.), html_table(.))} %>% 
-  map(~ tibble(.x) %>% rename_with(~"full_date", ends_with("x"))) %>%
+  map(~ tibble(.x) %>% rename_with(~paste0("full_date", .x, recycle0 = TRUE), .cols = ends_with("x"))) %>%
   reduce(bind_rows) %>% 
-  fill(full_date) %>% 
-  filter(!is.na(`Local authority`))
+  fill(full_date.x) %>% 
+  filter(!is.na(`Local authority`)) |> 
+  rename(full_date = full_date.x)
 
 jcp_rollout_dates <- uc_rollout_untidy %>% 
   mutate(jcp = str_split(`Jobcentre area`, " JCP\\**")) %>% 

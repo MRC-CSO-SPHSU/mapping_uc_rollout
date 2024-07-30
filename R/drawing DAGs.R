@@ -554,6 +554,67 @@ grViz(
 grViz(
   'digraph {
     node[shape=plaintext, fontname=Arial]
+    edge[color = black, style = solid]
+    UC [label = <<b>UC exposure</b>>]
+    MH [label = "Mental Health"]
+    E [label = Employment]
+    BI [label = "Benefit Income"]
+    UC -> MH [minlen = 10, style = solid, color = white]
+    UC -> E [color = white]
+    E -> BI  [color = green]
+    E -> MH [color = blue]
+    BI -> MH [color = blue]
+    UC -> BI [color = green] 
+  {rank =min; UC; MH}
+  {rank = same; E; BI}
+  }'
+  
+)
+
+grViz(
+  'digraph {
+    node[shape=plaintext, fontname=Arial]
+    edge[color = black, style = solid]
+    UC [label = <<b>UC exposure</b>>]
+    MH [label = "Mental Health"]
+    E [label = Employment]
+    I [label = "Income"]
+    UC -> MH [minlen = 10, style = solid, color = red, style = dashed]
+    UC -> E [color = red, style = dashed]
+    E -> MH [color = blue]
+    UC -> I [color = green] 
+    E -> I  [color = green]
+    I -> MH [color = blue]
+  {rank =min; UC; MH}
+  {rank = same; E; I}
+  }'
+  
+)
+
+library(ggplot2)
+
+ggp <- tibble::tibble(Edge = rep(c("HM2", "UKMOD", "UC mod"), each = 2),
+               x = rep(1:2, times = 3)) |> 
+  ggplot(aes(x, y = 1, colour = Edge)) +
+  geom_line(arrow = arrow(length = unit(0.3, "cm"), type = "closed"),
+            linewidth = 1, 
+            lineend = "butt", linejoin = "mitre") +
+  scale_colour_manual(values = c(
+    HM2 = "blue",
+    `UC mod` = "red",
+    UKMOD = "green"
+  )) +
+  theme(legend.position = "bottom", legend.key = element_blank())
+
+plot_leg <- ggp |> 
+  cowplot::get_legend()
+
+grid::grid.newpage()
+grid::grid.draw(plot_leg)
+  
+grViz(
+  'digraph {
+    node[shape=plaintext, fontname=Arial]
     edge[color = red, style = dashed]
     UC [label = <<b>UC exposure</b>>]
     MH [label = "Mental Health"]
