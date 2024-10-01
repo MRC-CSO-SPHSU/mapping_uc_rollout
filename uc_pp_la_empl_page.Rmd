@@ -29,6 +29,9 @@ theme_set(theme_sphsu_light())
 
 load(file = "data/uc_pp_la_empl.rdata")
 
+# library(readxl)
+# complete_la_rollout <- read_excel("data/complete_la_rollout.xlsx")
+
 uc_pp_la_empl_ts <- uc_pp_la_empl_n |> 
     select(empl = `Employment indicator`, 
          la = `National - Regional - LA - OAs`,

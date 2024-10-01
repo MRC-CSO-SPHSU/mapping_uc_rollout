@@ -7,3 +7,5 @@ api_key.txt
 !/data/*.json
 /hosting
 /R/HEED DAGs.R
+*.docx
+*.pdf

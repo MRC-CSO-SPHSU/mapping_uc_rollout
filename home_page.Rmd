@@ -1,0 +1,14 @@
+---
+title: "Tracking rollout of Universal Credit"
+output:
+  html_document:
+    keep_md: true
+---
+
+Using data from [Stat-Xplore](https://stat-xplore.dwp.gov.uk/), the following interactive graphs map the numbers of Universal Credit claimants:
+
+ - By [Job Centre Plus](/by_jcp)
+ - By Job Centre grouped by [Local Authority](/by_la)
+ - By Local Authority, grouped by [conditionality](/by_la_cond)
+ - By Local Authority, grouped by [employment status](/by_la_emp)
+ - By Local Authority, grouped by [family structure](/by_la_fam)
