@@ -56,6 +56,7 @@ uk_las_simple |>
 
 ggsave("graphs/map_UK_rollout_dates.tiff", height = 3500, width = 2500, dpi = 600, units = "px", compression = "lzw")
 ggsave("graphs/map_UK_rollout_dates.png", height = 3500, width = 2500, dpi = 600, units = "px")
+ggsave("graphs/map_UK_rollout_dates.svg", height = 7, width = 5, units = "in")
 
 `-.gg` <- \(e, f) f(e)
 

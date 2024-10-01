@@ -45,6 +45,17 @@ by_qs |>
   cols_label(quarter_dur = "Quarter of UC natural migration", quarters_exposed = "Number of quarters exposed (by end of 2019)") |> 
   gtsave("quarters_LA_observed.docx")
 
+by_qs |> 
+  mutate(quarter_dur = fct_reorder(factor(quarter_dur), rollout_q) |> fct_relabel(~str_replace(.x, ", ", "\n"))) |> 
+  ggplot(aes(quarter_dur)) +
+  geom_bar(fill = sphsu_cols("University Blue", names = FALSE)) +
+  scale_y_continuous("Number of LAs introducing UC in quarter", expand = expansion(mult = c(0, 0.05))) +
+  theme_sphsu_light() +
+  theme(panel.grid.major.x = element_blank()) +
+  xlab("Quarter")
+
+ggsave("graphs/rollout_by_quarter.png", dpi = 300, width = 200, height = 110, units = "mm")
+
 
 read_table("
   Outcome	UC Covid
